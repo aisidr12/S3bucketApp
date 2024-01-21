@@ -1,5 +1,6 @@
 package com.bucketapp.s3bucketapp.controller;
 
+import com.bucketapp.s3bucketapp.exception.S3BucketException;
 import com.bucketapp.s3bucketapp.service.S3Service;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -33,9 +34,18 @@ public class S3Controller {
     }
 
     @DeleteMapping("/delete/{bucketName}")
-    public ResponseEntity<String> deleteObjects(@PathVariable String bucketName) {
+    public ResponseEntity<String> deleteBucket(@PathVariable String bucketName) {
         s3Service.deleteBucketWithObjectsInsideNonVersion(bucketName);
         return ResponseEntity.ok("Deleted Successfully");
 
+    }
+    @DeleteMapping("/delete/only/{bucketName}")
+    public ResponseEntity<String> deleteOnlyBucket(@PathVariable String bucketName) {
+        try {
+            s3Service.deleteEmptyBucket(bucketName);
+        } catch (S3BucketException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+        return ResponseEntity.ok("Deleted Successfully");
     }
 }

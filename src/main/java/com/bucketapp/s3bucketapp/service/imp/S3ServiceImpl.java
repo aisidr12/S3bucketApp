@@ -1,8 +1,10 @@
 package com.bucketapp.s3bucketapp.service.imp;
 
+import com.bucketapp.s3bucketapp.exception.S3BucketException;
 import com.bucketapp.s3bucketapp.service.S3Service;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -73,7 +75,7 @@ public class S3ServiceImpl implements S3Service {
     public void deleteBucketWithObjectsInsideNonVersion(String bucketName) {
         List<S3Object> s3Objects = s3Client.listObjects(ListObjectsRequest.builder().bucket(bucketName).build()).contents();
         if (!s3Objects.isEmpty()) {
-            for(S3Object s3Object: s3Objects){
+            for (S3Object s3Object : s3Objects) {
                 s3Client.deleteObject(DeleteObjectRequest.builder().bucket(bucketName).key(s3Object.key()).build());
                 s3Client.deleteBucket(DeleteBucketRequest.builder().bucket(bucketName).build());
             }
@@ -87,10 +89,16 @@ public class S3ServiceImpl implements S3Service {
     }
 
     @Override
-    public void deleteEmptyBucket(String bucketName) {
-        s3Client.deleteBucket(DeleteBucketRequest.builder()
-                .bucket(bucketName)
-                .build());
+    public void deleteEmptyBucket(String bucketName) throws S3BucketException {
+        List<S3Object> s3Objects = s3Client.listObjects(ListObjectsRequest.builder().bucket(bucketName).build()).contents();
+        if (s3Objects.isEmpty()) {
+            s3Client.deleteBucket(DeleteBucketRequest
+                    .builder()
+                    .bucket(bucketName)
+                    .build());
+        } else {
+            throw new S3BucketException("Bucket must be empty before delete");
+        }
     }
 
     private boolean doesObjectExist(String objectkey) {
