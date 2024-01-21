@@ -4,7 +4,6 @@ import com.bucketapp.s3bucketapp.exception.S3BucketException;
 import com.bucketapp.s3bucketapp.service.S3Service;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -47,7 +46,6 @@ public class S3ServiceImpl implements S3Service {
         if (!doesObjectExist(fileName)) {
             return "This filename does not exist";
         }
-
         GetObjectRequest objectRequest = GetObjectRequest.builder().bucket(bucketName)
                 .key(fileName)
                 .build();
@@ -102,15 +100,12 @@ public class S3ServiceImpl implements S3Service {
     }
 
     private boolean doesObjectExist(String objectkey) {
-        //TODO improve this code
         try {
-            HeadObjectRequest headObjectRequest = HeadObjectRequest
+            s3Client.headObject(HeadObjectRequest
                     .builder()
                     .bucket(bucketName)
                     .key(objectkey)
-                    .build();
-            s3Client.headObject(headObjectRequest);
-            return true;
+                    .build());
         } catch (S3Exception exception) {
             if (exception.statusCode() == 404) {
                 return false;
